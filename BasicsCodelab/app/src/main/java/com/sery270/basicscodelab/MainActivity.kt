@@ -3,12 +3,16 @@ package com.sery270.basicscodelab
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -21,16 +25,16 @@ class MainActivity : ComponentActivity() {
         setContent {
             BasicsCodelabTheme { // setContent 내에서 사용되는 앱 테마는 프로젝트 이름에 맞게 지정됩니다.
                 // A surface container using the 'background' color from the theme
-                myApp()
+                MyApp()
             }
         }
     }
 }
 
 @Composable
-private fun myApp() {
-    // remember 함수는 컴포저블이 컴포지션에 유지되는 동안에만 작동
-    // rememberSaveable 함수는 구성 변경시에도 유지
+private fun MyApp() {
+    // remember 함수는 컴포저블이 컴포지션에 유지되는 동안에만 작동 (스크롤 되어 넘어가면 날라감 ex. expanded)
+    // rememberSaveable 함수는 구성 변경시에도 유지되는 동안에만 작동
     var shouldShowOnboarding by rememberSaveable { mutableStateOf(true) }
 
     if (shouldShowOnboarding) {
@@ -59,11 +63,21 @@ private fun Greeting(name: String) {
     // val expanded = mutableStateOf(false)
     // 4. recomposition이 발생하더라도 변경 가능한 상태는 기억되고 유지돼야한다. 즉 확장 여부는 계속 변하고 기억되어야하는 정보이다.
     // 이를 위해 remember 로 랩핑하여, Compose가 이 변수를 추적하도록한다.
-    val expanded = rememberSaveable { mutableStateOf(false) }
+    //    val expanded by remember { mutableStateOf(false) }
+
+    // 스크롤 되어도 값이 유지되도록 rememberSaveable로 변경 !
+    var expanded by rememberSaveable { mutableStateOf(false) }
     // 5. Composable 함수는 이와 같은 상태를 자동으로 구독한다.
     // 6. 해당 상태가 변경되었을때 해당 함수가 재호출되는데, 이것을 recomposition 이라고 한다.
     // recomposition : 데이터가 변경되면 Compose는 새 데이터로 이러한 함수를 다시 실행하여 업데이트된 UI를 만드는 것
-    val extraPadding = if (expanded.value) 48.dp else 0.dp
+
+    // 7. by를 사용하여 .value 없이 바로 값을 사용할수 있도록 함
+
+    // animateDpAsState를 사용하여 펼치는 애니메이션 구현
+    // 애니메이션이 완료될 때까지 애니메이션에 의해 객체의 value가 계속 업데이트되는 상태 객체를 반환
+    val extraPadding by animateDpAsState(
+        if (expanded) 48.dp else 0.dp
+    )
 
 
     // MaterialTheme : 구글의 디자인 시스템
@@ -83,8 +97,8 @@ private fun Greeting(name: String) {
             }
             // Modifier : 정렬, 애니메이션 처리, 배치, 클릭 가능 여부 또는 스크롤 가능 여부 지정, 변환을 할 수 있음
             // https://developer.android.com/jetpack/compose/modifiers-list?hl=ko
-            OutlinedButton(onClick = { expanded.value = !expanded.value }) {
-                Text(if (expanded.value) "less" else "more")
+            OutlinedButton(onClick = { expanded = !expanded }) {
+                Text(if (expanded) "less" else "more")
             }
         }
     }
@@ -131,6 +145,6 @@ fun OnboardingPreview() {
 @Composable
 fun MyApoPreview() {
     BasicsCodelabTheme {
-        myApp()
+        MyApp()
     }
 }
