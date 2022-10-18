@@ -22,6 +22,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.material.MaterialTheme
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.ShareCompat
 import androidx.core.widget.NestedScrollView
@@ -57,10 +58,24 @@ class PlantDetailFragment : Fragment() {
         val binding = DataBindingUtil.inflate<FragmentPlantDetailBinding>(
             inflater, R.layout.fragment_plant_detail, container, false
         ).apply {
-            composeView.setContent {
-                // You're in Compose world!
-                MaterialTheme {
-                    PlantDetailDescription()
+            composeView.apply {
+                /**
+                 * (default) Compose는 뷰가 창에서 분리될 때마다 컴포지션을 삭제함. ->  ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool 사용
+                 * 근데 이 기본 값이 적절하지 않은 경우가 있음
+                 *
+                 * 1. fragment -> 래그먼트의 뷰 수명 주기에 따라 상태를 저장헤야하기 때문에
+                 * 2. Transitions -> 전환이 끝날 때가 아닌 전환이 시작될 때 창에서 분리되므로 컴포저블이 화면에 계속 표시되는 동안 상태를 삭제하게 되므로
+                 *
+                 *
+                 * 따라서 이러한 경우에는 setViewCompositionStrategy를 통해 적절한 전략을 설정해주어야함
+                 */
+                setViewCompositionStrategy(
+                    ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed
+                )
+                setContent {
+                    MaterialTheme {
+                        PlantDetailDescription(plantDetailViewModel)
+                    }
                 }
             }
             viewModel = plantDetailViewModel
